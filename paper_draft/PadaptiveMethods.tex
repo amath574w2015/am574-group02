@@ -1,0 +1,298 @@
+%\documentclass[twoside]{scrartcl}
+\documentclass[10]{amsart}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,subfigure}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{graphics}
+\usepackage{graphicx}
+\usepackage{color}          % For editing commands
+%\usepackage[colorlinks=true]{hyperref}
+\usepackage{hyperref}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+
+
+%\usepackage{pgfplots}
+
+%==============================================================================
+%	USER DEFINED COMMANDS
+%==============================================================================
+\include{styles}
+
+\newtheorem{definition}{Definition}
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+\newtheorem{corollary}{Corollary}
+\newtheorem{remark}{Remark}
+\newcommand{\p}{\partial}
+
+\setlength{\parskip}{0pt}
+\setlength{\parsep}{0pt}
+\setlength{\headsep}{0pt}
+\setlength{\topskip}{0pt}
+\setlength{\topmargin}{0pt}
+\setlength{\topsep}{0pt}
+\setlength{\partopsep}{0pt}
+
+
+%opening
+\title[]{P-Adaptive Methods for Hyperbolic PDEs}
+\author{Devin Light and Scott Moe}
+
+\begin{document}
+\maketitle
+
+\section{Introduction}
+
+Numerical methods for solving PDEs are typically developed considering only the simplest of cases. Usually this
+involves working on problems that can be solved using uiform cartesian grids. However, often hyperbolic PDEs
+are solved that actually should involve variable amounts of resolution throughout the domain. The CLAWPACK
+software package addresses this using Adaptive Mesh Refinement (AMR) where a hyperoblic PDE is solved using grids
+that are more refined in some regions than others. However there is another option that may be just as useful
+for smooth problems. The Discontinuous Galerkin Finite Element Method (DGFEM) is a high order
+extension of the Godunov Method. The DGFEM of any order can be implemented on the same grid as the Godunov
+method. So instead of increasing grid resolution in the typical way by locally dividing cells, we could add more
+degrees of freedom to a cell and define a higher order scheme on that cell. This is known as p-adaptivity
+(for polynomial adaptivity) because it typically involves using basis functions of different polynomial orders on different
+cells. Traditional mesh adaption strategies are then known as h-adaptivity. 
+
+We will introduce the Discointinuous Galerkin method and explain its analogies to the Finite Volume method. Following that
+we will examine the requirements for effective dynamic p-adaptivity. This is somewhat of an open challenge in the literature
+although there are several papers that have explored this topic to some extent. We will develop new strategies
+that will be useful for p-adaptivley solving hyperbolic PDEs using explicit discretizations. Finally we will examine
+the performance of these strategies on some one dimensional example problems.
+
+\section{Discontinuous Galerkin Method}
+
+The Discontinuous Galerkin method is a arbitrary order extension of the first order Finite Volume method.
+This method is actually a hybrid method using the technologies of both the Finite Element method and the Finite
+Volume method. There are several forms of the DGFEM but I will focus on the formulation that is most similar to 
+the first order Finite Volume method. In a Finite Element method we typically use our PDE to construct a variational
+form that can be enforced on some finite dimensional function space. This is done by multiplying by a test function $\phi$,
+and integrating by parts.
+
+Let us define a closed domain (we can safely assume it is convex) to be $\Omega$ and our test function to be $\phi$   
+Also let us assume that we are solving a hyperbolic PDE that can be written using the integral form in equation
+\eqref{eq:integralform}.
+
+\begin{equation}
+ \frac{\partial q}{\partial t} + \nabla \cdot {\bf F(q,x,t)}=0
+ \label{eq:integralform}
+\end{equation}
+We can multiply equation \ref{eq:integralform} by a test function and integrate by parts to obtain the weak
+form in equation \eqref{eq:weakform}.
+\begin{equation}
+ \int_{\Omega} \phi({\bf x}) \frac{\partial q}{\partial t} + \phi({\bf x}) \nabla \cdot {\bf F(q,x,t)}
+=\int_{\Omega} \phi({\bf x}) \frac{\partial q}{\partial t} d\Omega + \oint_{\partial \Omega} \phi({\bf x}) {\bf F(q,x,t)} \cdot d{\bf s}
+ -\int_{\Omega}{\bf F(q,x,t)} \cdot \nabla \phi d\Omega \label{eq:weakform}
+ \end{equation}
+ where ${\bf q}$ is our solution and $\phi$ is a test function. Since we are integrating over the whole domain
+ we have assumed that $\nabla \phi$ is at least integrable over the whole domain. Thus we would have to assume that $\phi \in 
+ C_0$. 
+ 
+ The previous step is what you would do in a typical Finite Element method. However for hyperbolic PDEs this usually
+ does not work extremely well. A technical explanation of why this is is beyond the scope of this document. However
+ there is a simple analogy that may convince you this is true. 
+ 
+ Assume that $\Omega=(a,b)$, ${\bf q}=q$, and ${\bf F({\bf q})}=u {\bf q}$.
+ So in this case we are solving the simplest hyperbolic equation, a scalar advection equation.
+ Let us also say that we will just use a uniform meshing of $(a,b)$. It is natural to choose $\phi \in {\bf P}_1^0$. Where
+ we have defined ${\bf P}_1^0$ to be the space of piecewise linear, continuous hat functions.
+ 
+ We are thus proceeding exactly as you would in a typical finite element method. If we identify $I=\{I_j | j=0\cdots N\}$
+ to be our set of points then we will have that our approximation to the weak derivative will be given by
+ $$[\int_{\Omega}\phi_{i,x} u\phi_{j} d\Omega ] [q_j]$$
+ So the weak derivative at point $I_j$ will involve any point such that terms of the following form are nonzero
+ $$\int_{\Omega}\phi_{i,x} u\phi_{j} d\Omega $$
+ In this case we see that this will be nonzero for $I_{j-1}$, $I_{j}$ and $I_{j+1}$. In fact, given that we are working on a uniform
+ grid 
+  $$\int_{\Omega}\phi_{j-1,x} u\phi_{j} d\Omega = \int_{\Omega}\phi_{j+1,x} u\phi_{j} d\Omega $$
+ This dictates that the stencil we use to evaluate derivatives in our FEM is centered. However, as we have seen,
+ hyperbolic PDEs are usually best solved using upwind discretizations. This type of discretization just makes
+ more sense physically as in hyperoblic PDEs information has a fixed drection of propagation. 
+ 
+ To deal with this issue we must work with a somewhat different 
+ discretization from what is done in a typical Finite Element Method. For our next attempt at discretizing general hyperoblic
+ PDEs we will still multiply by a test function and integrate by parts, but instead of integrating by parts over the whole domain
+ we will integrate by parts over only one small cell $\Omega_k$. 
+ 
+ \begin{align}
+ \int_{\Omega_k} \phi({\bf x}) \frac{\partial q}{\partial t} + \phi({\bf x}) \nabla \cdot {\bf F(q,x,t)}
+&=\\ \int_{\Omega_k} \phi({\bf x}) \frac{\partial q}{\partial t} d\Omega +\oint_{\partial \Omega_k} \phi({\bf x}) {\bf F(q,x,t)} \cdot d{\bf s}
+ -&\int_{\Omega_k}{\bf F(q,x,t)} \cdot \nabla \phi d\Omega \label{eq:weakform2}
+ \end{align}
+ This equation should look more similar to the equations used to derive the first order Godunov method. The main difference
+ comes from the term $\int_{\Omega_k}{\bf F(q,x,t)} \cdot \nabla \phi d\Omega$ that comes from the fact that our
+ test function is not just a constant (if $\phi$ is a constant this reduces to the Godunov method).
+ 
+ This is what is known as the Discontinuous Galerkin Finite Element Method. 
+ 
+ \subsection{Choosing a Function Space}
+ The formulation of the DGFEM presented in equation \eqref{eq:weakform2} completely decouples neighbouring cells from one another.
+ So this removes the typical Finite Element method requirement that our basis functions are in $C_0$. As such we no longer
+ need to pick hat functions, as is typically done. Instead it is normal to pick our basis functions so that on each
+ cell $\Omega_k$ we have a heirarchical orthonormal basis. This is the natural extension of the low order Godunov method.
+ Essentially it means that, instead of just evolving the zeroeth order moments (cell averages) of a solution, we are also
+ evolving higher order moments. This also has the nice side-effect of making the typical Finite Element mass matrix  
+ diagonal. The mass matrix is the name for the linear system which results from terms of the form:
+ $$\int_{\Omega_k} \phi({\bf x}) \frac{\partial q}{\partial t} d\Omega $$
+ 
+ \subsection{Evaluating the Boundary Integrals}
+ The DGFEM has the same issue as the Finite Volume method in that it requires the evaluation of the flux function
+ on the boundary between cells where the solution is not defined. 
+ 
+ As in the Finite Volume methods we are farmiliar with, we will have to define $\mathcal{F}(q_l,q_r)$
+ However our Riemann problems will involve $q_l$ and $q_r$ that are actually
+ point values evaluated at the interface itself instead of cell
+ averages. 
+ 
+ The reasoning for why it is ok to just solve Riemann problems to obtain boundary fluxes is slightly
+ murkier here than in the finite volume case. In this situation you are actually solving for something 
+ in that is really actually very far from a Riemann solution.
+ 
+ \section{1D Discontinuous Galerkin Method in Wave Propagation Form}
+Say we have a hyperbolic PDE of the following form...
+
+$$\frac{\partial q}{\partial t}+f(q,x)_x=0$$
+over the domain $(a,b)$.
+
+Say that the domain can be divided into cells denoted by $I_j=(x_{j-\frac{1}{2}},x_{j+\frac{1}{2}})$
+
+ We will be interested in approximate solutions of the PDE that
+satisfy
+
+$$\frac{1}{\Delta x}\int_{t^n}^{t^{n+1}}\int_{x_{j-\frac{1}{2}}}^{x_{j+\frac{1}{2}}} (v\frac{\partial q}{\partial t}+v f(q,x)_x)dxdt=0$$
+
+$\forall$ $v \in V=\{p | p(I_j) \in P^k(I_j)\}$
+
+We will integrate by parts
+$$\frac{1}{\Delta x}\int_{t^n}^{t^{n+1}}\int_{x_{j-\frac{1}{2}}}^{x_{j+\frac{1}{2}}} 
+(v\frac{\partial q}{\partial t}-v_x f(q,x)+(v f(q,x))_x)dxdt=0$$
+In this spirit we will define a set of orthonormal basis functions, $\phi_j(x)$, of $V$ that are each nonzero on only one cell.
+This means we can get away with just defining a set of basis functions on the domain we are mapping every cell to.
+In addition we will pick our orthonormal basis to satisfy
+$$\frac{1}{\Delta x}\int_{x_{j-\frac{1}{2}}}^{x_{j+\frac{1}{2}}}  \phi_j \phi_i d x=\delta_{ij}$$
+
+Letting the max polynomial order $k$ of $V$ go to infinity would let us describe, on any interval: 
+$$ q=\sum_j Q_j(t) \phi_j (x)$$. Lets plug in a specific basis function for $v$.
+
+$$\frac{1}{\Delta x}\int_{t^n}^{t^{n+1}}\int_{x_{j-\frac{1}{2}}}^{x_{j+\frac{1}{2}}} 
+(\phi_i\frac{\partial q}{\partial t}+(\phi_{i} f(q,x))_x-(\phi_{i,x} f(q,x)))dxdt=0$$
+so
+$$\frac{1}{\Delta x}\int_{t^n}^{t^{n+1}}\int_{x_{j-\frac{1}{2}}}^{x_{j+\frac{1}{2}}} 
+(\phi_i\frac{\partial q}{\partial t}+(\phi_{i} f(q,x))_x dxdt
+=\frac{1}{\Delta x}\int_{t^n}^{t^{n+1}}\int_{x_{j-\frac{1}{2}}}^{x_{j+\frac{1}{2}}}(\phi_{i,x} f(q,x)))dxdt$$
+
+It is now straightforward to simplify to the DG algorithm. But lets look at this further. If $i=0$ then the source
+term on the rhs drops out entirely, and we have the Finite Volume method. Further it is clear that
+$Q_0$, the coefficient of $\phi_0$ is evolved by exactly that finite volume equation. So the cell average is
+being evolved just like in the finite volume scheme, but the high order fluctuations seem to satisfy modified PDEs.
+
+$$(\phi_i(x)q(x,t))_t+(\phi_i(x)f(q,x))_x=\phi_{i,x}f(q,x)$$
+
+Note that in solving this we always make the approximation $$\int_{x_{j-\frac{1}{2}}}^{x_{j+\frac{1}{2}}} \phi_{i,x}f(q,x)dx
+=\sum_{j=1}^N \omega_j\phi_{i,x}(\xi_j)f(q(\xi_j),\xi_j)$$
+
+So numerically it would be equivalent if we replaced 
+$$\phi_{i,x}f(q,x)$$ 
+by
+$$\sum_{j=1}^N \omega_j\phi_{i,x}f(q,x)\delta(x-\xi_j)$$
+giving
+$$(\phi_i(x)q(x,t))_t+(\phi_i(x)f(q,x))_x=\sum_{j=1}^N \omega_j\phi_{i,x}f(q,x)\delta(x-\xi_j)$$
+And in the linear case
+$$\left(\phi_i(x)q(x,t)\right)_t+\left[A(\phi_i(x) q(x,t))\right]_x=\sum_{j=1}^N \omega_j\phi_{i,x}A q(x,t)\delta(x-\xi_j)$$
+Note that in the numerical implementation we always treat $\phi_i(x)$ as if it was continuous even
+while allowing $q(x,t)$ to be discontinuous, and so
+it does not affect the riemann problem.
+$$$$
+Basically in this case $(\phi_i(x) q(x,t))$ is advected, and also there are discrete sources at $N$ quadrature nodes.
+
+If we integrate these equations over space and time and break the riemann problem up into wave propagation form we get
+(keeping in mind that the waves and lower case q are functions of time...)
+$$Q_i(t^{n+1})=Q_i(t^n)-\frac{1}{\Delta x} \int_{t^n}^{t^{n+1}}[\phi_i(x_{i-1/2})
+\sum_{p=1}^m (\lambda^p)^{+} \mathcal{W}^p_{i-1/2}
++\phi_i(x_{i+1/2})\sum_{p=1}^m (\lambda^p)^{-} \mathcal{W}^p_{i+1/2}]dt$$
+$$+\int_{t^n}^{t^{n+1}}\sum_{j=1}^N \omega_j\phi_{i,x}(\xi_j)A q(\xi_j,t) dt$$
+Also notice that if our PDE is not in conservative form what we obtain is...
+$$Q_i(t^{n+1})=Q_i(t^n)-\frac{1}{\Delta x} \int_{t^n}^{t^{n+1}}[\phi_i(x_{i-1/2})
+\sum_{p=1}^m (\lambda^p)^{+} \mathcal{W}^p_{i-1/2}
++\phi_i(x_{i+1/2})\sum_{p=1}^m (\lambda^p)^{-} \mathcal{W}^p_{i+1/2}]dt$$
+$$+\int_{t^n}^{t^{n+1}}\sum_{j=1}^N \omega_j(\phi_{i}A)_x(\xi_j) q(\xi_j,t) dt$$ 
+We have a slight modification of source terms.
+\section{P-Adaptivity for polynomial approximation}
+Let us forget about the fact that we actually want to solve a PDE and consider the situation where we are approximating
+some function $f(x)$ on a line $\Omega=(a,b)$ and we have split our domain into a set of $N$ intervals. Say we just wish
+to adaptivley approximate $f$ on each one of these intervals. In this case one natural thing to try and do is to try and
+compute the orthogonal series expansion of our function. 
+
+Let us define $L_i(x)$ as the ith normalized Legendre polynomial. If we assume that our $f \in L_2 (\Omega)$
+then the local Legendre series of our solution is given by 
+$$f(x)|_{x \in I_j}=\sum_{i=1}^\infty c_i L_i(2\frac{x-x_j}{\Delta x_j}) $$
+We know from approximation theory that these coefficients should decay at some rate
+depending on the local regularity of $f$. If we want to mantain a certain
+accuracy for our specific cell $j$ then we should expect to only need a finite number of these coefficients.
+Clearly if we want a this accuracy on each cell, the number of important coefficients on each cell
+could be very different. The most obvious case of this is when $f$ is constant on a cell. In this case we should only
+need one coefficient. 
+
+The idea of p-adaptive approximation is to allow this order to change naturally from cell to cell. This could be done in a 
+very efficient recursive procedure, stopping when coefficients have reached small enough values. 
+We will describe how this works in Algorithm \ref{alg:algo1} below.
+First one should define a maximum order that we are willing to use in our approximation, call it $N_m$. We will
+then attempt to construct only the important terms in the Legendre series on each cell. We do this by computing Legendre
+series terms on each cell until consecutive coefficients are below the tolerance, or we reach the maximum order
+of the series that we are willing to keep. 
+
+\begin{algorithm}
+\caption{Algorithm for p-adaptive approximation}
+\begin{algorithmic}[1]
+\For{$I_j \in I=(a,b)$} 
+  \State {$c^n=\int_{I_j} f(\xi) L_0(\xi) d\xi$}
+  \State {$c^o=c^n$}
+  \State {$k=0$ and $c^j_k=c^n$}
+  \While{$\max(|c^o|,|c^n|)>TOL$ and $k<N_m-1$}
+    \State {$c^o=c^n$}
+    \State {$k=k+1$}    
+    \State {$c^n=\int_{I_j} f(\xi) L_k(\xi) d\xi$}
+    \State $c^j_k=c^n$
+  \EndWhile
+\EndFor
+\end{algorithmic}\label{alg:algo1}
+\end{algorithm}
+
+\section{P-Adaptivity for A Discontinuous Galerkin Scheme}
+
+This is what we are currently working out. We hope to use Algorithm \ref{alg:algo1} to
+compute an initial condition. After that we will go through and reassign orders on each cell
+to create a buffer region around each of the high order regions. The idea behind this is that we 
+will not need to worry about reassigning new orders every time-step. 
+
+\subsection{Refining and Coarsening in time}
+
+The idea is that every handfull of timesteps we should coarsen everywhere possible, then reassign a new buffer.
+Hopefully some region in our old buffer still will need high-order and so we will essentially be re-assigning a new
+buffer around this region only.
+
+Here we will, hopefully have some nice figures from like the advection equation where we have high order cells just following
+the interesting region of some profile. We need to get the code working for this.
+
+\section{Examples}
+
+We will show a couple examples of following profiles of differing regularities. We have been working on
+making our code general so that it should work for any of these examples....
+
+\subsection{Advection}
+
+
+
+\subsection{Acoustics}
+
+
+
+\subsection{Shallow Water}
+
+
+
+\end{document}

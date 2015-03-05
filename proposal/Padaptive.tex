@@ -1,0 +1,82 @@
+%\documentclass[twoside]{scrartcl}
+\documentclass[10]{amsart}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,subfigure}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{graphics}
+\usepackage{graphicx}
+\usepackage{color}          % For editing commands
+%\usepackage[colorlinks=true]{hyperref}
+\usepackage{hyperref}
+
+
+%\usepackage{pgfplots}
+
+%==============================================================================
+%	USER DEFINED COMMANDS
+%==============================================================================
+\include{styles}
+
+\newtheorem{definition}{Definition}
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+\newtheorem{corollary}{Corollary}
+\newtheorem{remark}{Remark}
+\newcommand{\p}{\partial}
+
+\setlength{\parskip}{0pt}
+\setlength{\parsep}{0pt}
+\setlength{\headsep}{0pt}
+\setlength{\topskip}{0pt}
+\setlength{\topmargin}{0pt}
+\setlength{\topsep}{0pt}
+\setlength{\partopsep}{0pt}
+
+
+%opening
+\title[]{P-Adaptive Discontinuous Galerkin Methods}
+\author{Devin Light and Scott Moe}
+
+\begin{document}
+\maketitle
+
+\section{Introduction}
+Discontinuous Galerkin (DG) methods can be thought of as a higher-order extension to traditional finite volume methods and have become increasingly popular in the computational sciences. These schemes are attractive not only because they are flexible with respect to spatial discretization but also because they permit arbitrary degree local polynomial representation. For computationally intensive problems with smooth solutions, such as atmospheric advection, it can be more efficient to use maximal order reconstructions rather than continuously refining the mesh. We plan to describe and analyze a novel P-adaptive DG method for the solution of both the piecewise constant acoustic system and non-autonomous advection. 
+
+\section{P-Adaptive Refinement}
+As the size of the problems simulated has grown over the last several years, it has becoming increasingly common to combine DG methods with adaptive mesh refinement. However it is also entirely possible for every DG cell to have a unique approximation space that is completely independent from
+that on neighboring cells. This makes DG uniquely amenable to adaptivity by polynomial refinement. We think this is an understudied topic, because for smooth problems it should be very effective \cite{fankhauser2014hp} and should allow one to leverage
+the elegant algorithms more recently developed for high-order problems (as used in the chebfun software package for example).
+
+Essentially we seek to use the fact that DG using a modal basis such as the Legendre polynomials computes coefficients hierarchically
+so that at any point in time we can compute our solutions modes corresponding to $L_N$ without changing any of the modes
+for $L_{i}, i <N$. This is true for evolving the projected initial conditions assuming we use a high-enough quadrature to avoid aliasing errors or pre-compute integrals. Essentially this is because any DG update will look like
+\begin{equation*}c_i^{(k),n+1}=\int_{\Omega_i} \varphi_k q^n({\bf x},t^n) d\Omega_i +\frac{\Delta t}{\Delta x}
+\left( \oint_{\partial \Omega_i} \varphi_k {\bf F}^{*}(q,t) \cdot d{\bf s} - \int_{\Omega_i} {\bf F}(q)
+\cdot \nabla \varphi_k d\Omega_i\right)\end{equation*} 
+So in the computation of $c_i^{(k),n+1}$ we use our previous solution and a time-independent basis function.
+We feel like we can adopt a strategy like Chebfun uses for interpolation then, and compute $c_i^{(k),n+1}$
+coefficients until our coefficients drop below a set tolerance. We have not
+found many references besides Chebfun for this. Most adaptive DG methods use a posteriori error estimates to determine when refinement is needed \cite{berger1998adaptive,fankhauser2014hp} or to fix the local polynomial degree but let it vary amongst cells \cite{dumbser2007arbitrary}.
+
+\section{Lax-Wendroff Time-Stepping}
+The best way to do Lax-Wendroff time-stepping for DG is currently a topic of open discussion. The most common
+approach for the past ten-years has been the ADER DG approach \cite{dumbser2005ader,dumbser2007arbitrary} where a flux function is computed by
+explicit differencing your solution at time-step $n$. In fact that was the only proposed method until
+2014. It has been shown recently, though, that ADER DG has very poor long-time accuracy properties when compared to 
+RK DG for linear PDEs \cite{guo2014new}. In the work by Guo it was shown that this is essentially because RKDG superconverges
+to a special smoothed or projected version of the solution while ADER DG does not. This is not surprising because explicitly
+differencing your solution gives produces a one-order lower accurate approximation of your derivatives so it would be believable
+that these errors could build up over time.
+
+We intend to follow the work of Guo, and compute weak derivatives using more flux information
+from neighboring cells. This
+method will fit in nicely with the P-adaptive ideas because we can adapt the number of derivatives we compute to fit the local
+order of our solution.
+
+\bibliographystyle{unsrt}
+\bibliography{References}
+
+\end{document}
