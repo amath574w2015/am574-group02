@@ -1,3 +1,3 @@
 # am574-group02
-The current draft of our paper (really an outline at this point) is found in
-the paper_draft directory
+Title: A p-Adaptive Discontinuous Galerkin Method for Hyperbolic PDEs in 1D
+ 
