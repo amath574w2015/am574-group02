@@ -1,0 +1,24 @@
+======================================================
+             BEGINNING RUN OF MODAL TESTS
+                    muMAX= 0.0079
+======================================================
+======
+TEST 2: Uniform advection of cosinebell
+======
+Precomputing quadrature nodes and weights...
+Beginning runs...
+Beginning time stepping...
+Beginning time stepping...
+Beginning time stepping...
+Beginning time stepping...
+Beginning time stepping...
+====================
+         q1
+====================
+   nex      E1        E2       Einf      convergence rate  maximum   minimum       cons       cputime   tf
+   16  0.2896E-04  0.6979E-04  0.3270E-03 0.00 0.00 0.00  0.1000E+01 -0.5251E-03 -0.1548E-05    7.42    1.00
+   32  0.4227E-05  0.1484E-04  0.1328E-03 2.78 2.23 1.30  0.1000E+01 -0.1358E-03  0.1713E-06   19.90    1.00
+   64  0.5698E-06  0.2799E-05  0.2851E-04 2.89 2.41 2.22  0.1000E+01 -0.2665E-04  0.2402E-07   51.79    1.00
+  128  0.8177E-07  0.5548E-06  0.9644E-05 2.80 2.33 1.56  0.1000E+01 -0.8313E-05 -0.2676E-08  125.44    1.00
+  256  0.1110E-07  0.1127E-06  0.2478E-05 2.88 2.30 1.96  0.1000E+01 -0.2863E-05 -0.3730E-09  320.58    1.00
+PROGRAM COMPLETE!
