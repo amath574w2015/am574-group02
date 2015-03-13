@@ -383,12 +383,26 @@ over letting the worst cell determine a global time-step but it is too complicat
 
 \section{Numerical Results}
 
-We have implemented our scheme on several simple examples. 
+We have implemented our scheme on several simple examples. Notice that the emphasis here is not on complicated problems, but on the relative improvement in efficiency obtained by allowing the maximum polynomial degree to change over the course of the integration.
 
 \subsection{Advection}
 
-\subsection{Burgers Equation}
+\begin{figure}
+\hfil\includegraphics[width=3.5in]{figures/cosbellCmpre_E64N10.pdf}\hfil
+\caption{Constant windspeed ($\bar u = 1$) advection of a $C_0$ cosine bell over a periodic domain using $p_{max} = 10$ and $64$ cells. Initial conditions ( {\bf a)} and {\bf b)} ) and final solution ( {\bf c)} and {\bf d)} ) for standard DG and $p$-adaptive DG respectively. Colored regions indicate local polynomial degree truncation. Total degrees of freedom are listed in the top right corner. } \label{cosbellCmpre}
+\end{figure}
 
+\begin{figure}
+\hfil\includegraphics[width=3.25in]{figures/efficency.pdf}\hfil
+\caption{Comparison of the $L_2$ error versus total degrees of freedom (DOF) for constant speed advection of a cosine bell using $p$-adaptive and non-adaptive DG methods. } \label{cosbellEfficiency}
+\end{figure}
+
+\subsection{Burger's Equation}
+\begin{figure}
+\hfil\includegraphics[width=5in]{figures/burgers_heat.pdf}\hfil
+\caption{$p$-adaptive DG simulation of Burger's equation on a periodic domain using $64$ cells at {\bf a)} the initial time and {\bf b)} time $T=3$. Color indicates local polynomial degree. }
+\label{burgersGaussian}
+\end{figure}
 \subsection{Acoustics}
 
 
