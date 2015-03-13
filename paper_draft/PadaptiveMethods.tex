@@ -175,7 +175,7 @@ form in equation \eqref{eq:weakform}.
  scope of this paper. We will use the well known $3$rd order Runge-Kutta scheme. For the ode $y^{'}=f(t,y)$ this looks like
  \begin{align*}
   k_1=&hf(t,y^n)\\
-  k_2=&h f(t+\frac{h}{2},y^n+\frac{1}{2}k_1\\
+  k_2=&h f(t+\frac{h}{2},y^n+\frac{1}{2}k_1)\\
   k_3=&h f(t+h,y^n - k1 +2 k_2)
   y^{n+1}=y^n+\frac{1}{6} \left(k_1 + 4 k_2 + k_3\right)
  \end{align*}
@@ -264,7 +264,7 @@ compute the orthogonal series expansion of our function.
 
 Let us define $P_i(x)$ as the ith normalized Legendre polynomial. If we assume that our $f \in L_2 (\Omega)$
 then the local Legendre series of our solution is given by 
-$$f(x)|_{x \in I_j}=\sum_{i=1}^\infty c_i P_i(2\frac{x-x_j}{\Delta x_j})$$
+$$f(x)|_{x \in I_j}=\sum_{i=1}^\infty c_i P_i\left(2\frac{x-x_j}{\Delta x_j}\right)$$
 We know from approximation theory that these coefficients should decay at some rate
 depending on the local regularity of $f$. If we want to maintain a certain
 accuracy for our specific cell $j$ then we should expect that we will not need coefficients much smaller than that
@@ -383,14 +383,22 @@ over letting the worst cell determine a global time-step but it is too complicat
 
 \section{Numerical Results}
 
-We have implemented our scheme on several simple examples. Notice that the emphasis here is not on complicated problems, but on the relative improvement in efficiency obtained by allowing the maximum polynomial degree to change over the course of the integration.
+We have implemented our $p$-adaptive scheme on several simple examples. Notice that the emphasis here is not on complicated problems, but on the relative improvement in efficiency obtained by allowing the maximum local polynomial degree to change over the course of the integration. In all examples considered the time step is chosen such that the eigenvalues for the DGFEM differentiation matrix with $p_{max} = 10$ maximum degree polynomials lie within the stability region of RK3.
 
 \subsection{Advection}
 
 \begin{figure}
-\hfil\includegraphics[width=3.5in]{figures/cosbellCmpre_E64N10.pdf}\hfil
+\hfil\includegraphics[width=4.0in]{figures/cosbellCmpre_E64N10.pdf}\hfil
 \caption{Constant windspeed ($\bar u = 1$) advection of a $C_0$ cosine bell over a periodic domain using $p_{max} = 10$ and $64$ cells. Initial conditions ( {\bf a)} and {\bf b)} ) and final solution ( {\bf c)} and {\bf d)} ) for standard DG and $p$-adaptive DG respectively. Colored regions indicate local polynomial degree truncation. Total degrees of freedom are listed in the top right corner. } \label{cosbellCmpre}
 \end{figure}
+
+The simplest hyperbolic PDE to simulate is the constant windspeed advection 
+\begin{equation*}
+q_t + \bar{u} q_x  = 0.
+\end{equation*}
+In Figure \ref{cosbellCmpre} a $C_0$ cosine bell is advected with windspeed $\bar{u} = 1$ over a periodic domain for one revolution. In the left panels a DGFEM with uniform degree $p_{max}$ is used to simulate the PDE while in the right panels the local polynomial degree is allowed to vary between cells up to $p_{max}$. The colors of each region indicate the reconstructing polynomial degree within that area. Away from the two kinks where the solution meets the horizontal axis the cosine bell is smooth and its Legendre series coefficients decay rapidly. This implies that the $p$-adaptive method is able to use a relatively small number of degrees of freedom in order to capture the solution in the smooth areas. However, in the remaining regions near the kinks the coefficients do not decay rapidly and it is beneficial to maintain a high degree approximation. Overall the adaptive method is able to produce a similarly accurate solution using roughly half the total degrees of freedom. Notice that the high degree regions in the $p$-adaptive solution tracks along the corners in the exact solution. 
+
+We can examine an empirical convergence rate to the true solution as degrees of freedom are added to either method. Figure \ref{cosbellEfficiency} plots the $L_2$ error as a function of the total degrees of freedom used in the integration. Each point along either curve doubles the number of cells starting with $16$ (top left) and ending with $256$ (bottom right) cells. For a coarse number of cells the two methods use a similar number of degrees of freedom because each cell is responsible for approximating a larger portion of the exact solution so each cell contains a large amount of variation which keeps an increasing number of coefficients important. Notice that between runs with an equal number cells the two methods produce similarly accurate solutions but that the adaptive scheme uses progressively fewer (up to a factor of $1/3$) total degrees of freedom. This difference in degrees of freedom translates directly into a correspondingly sized difference in CPU time for the integration.
 
 \begin{figure}
 \hfil\includegraphics[width=3.25in]{figures/efficency.pdf}\hfil
@@ -398,15 +406,41 @@ We have implemented our scheme on several simple examples. Notice that the empha
 \end{figure}
 
 \subsection{Burger's Equation}
+A significantly more challenging problem is given by Burger's equation:
+\begin{equation*}
+q_t + \left( \frac{q^2}{2}\right)_x = 0
+\end{equation*}
+In this case even smooth initial data can develop into shocks after some time. Figure \ref{burgersGaussian} illustrates the $p$-adapted DGFEM solution to Burger's equation with a steep (but smooth) Gaussian bump initial condition. After a short time the solution develops a shock and the local polynomial expansion gives a relatively poor approximation to the true solution. Thus we can expect our adaptive method to use the maximum degree polynomial allowed in these regions. However, away from the shock the solution remains smooth and a good approximation is obtained using many fewer polynomials. 
+
 \begin{figure}
 \hfil\includegraphics[width=5in]{figures/burgers_heat.pdf}\hfil
 \caption{$p$-adaptive DG simulation of Burger's equation on a periodic domain using $64$ cells at {\bf a)} the initial time and {\bf b)} time $T=3$. Color indicates local polynomial degree. }
 \label{burgersGaussian}
 \end{figure}
+
 \subsection{Acoustics}
+Lastly we can consider our method applied to a non-conservative hyperbolic system 
 
+\begin{equation*}
+\begin{bmatrix}
+P\\ u
+\end{bmatrix}_t+\begin{bmatrix} 0 & c(x)^2 \rho(x) \\ \frac{1}{\rho(x)} & 0 \end{bmatrix}
+\begin{bmatrix}
+P \\ u
+\end{bmatrix}_x
+\end{equation*}
+A similar problem is examined in Section 9.7 of the textbook. Although we begin with a smooth initial condition, the exact solution is not continuously differentiable because of the jump in material properties. Figure \ref{variableAcoustics} illustrates the $p$-adaptive method just before and just after the pulse interacts with the interface. Even though the exact solution is not smooth near the interface the method only looks at coefficient decay locally in each cell. So the p-adaptive scheme continues to treat the solution as if it is a smooth function that has steepened.
 
+\begin{figure}
+\hfil\includegraphics[width=4in]{figures/acousticVariableCoeff.pdf}\hfil
+\caption{Right going acoustic gaussian pulse hitting an interface between two materials (thick vertical line) where the sound speed changes from $1$ to $0.5$ but the impedance remains unchanged. Left column $q_1$, right column $q_2$. }
+\label{variableAcoustics}
+\end{figure}
 
+\subsection{Conclusion}
+We have investigated a simple scheme for a local polynomial adaptive DGFEM. Our preliminary results show that this technique can be valuable in reducing the number of degrees of freedom required to obtain an accurate approximation for solutions with even moderate regularity. However, discontinuities present a serious challenge to any piecewise polynomial approximation and imply that limiting remains an important aspect of high order approximation. In order to further improve our method future work might focus on improving efficiency by implementing local time stepping, adaptive quadrature rules, and simultaneous $h$--$p$ refinement.
+
+\newpage
 \bibliographystyle{plain}
 \bibliography{sources}
 \end{document}
