@@ -145,14 +145,17 @@ form in equation \eqref{eq:weakform}.
  evolving higher order moments. This also has the nice side-effect of making the typical Finite Element mass matrix  
  diagonal. The mass matrix is the name for the array which results from terms of the form:
  $$\int_{\Omega_k} \phi({\bf x}) \frac{\partial q}{\partial t} d\Omega $$
- If we use a Legendre polynomial basis and map our interval from $\Omega_k$ to $[-1,1]$ each
+ If we use a Legendre polynomial basis 
+ \[ q(t,\xi) = \sum_{l=0}^p Q^{(l)}(t) \, \varphi^{(l)}(\xi) \]
+ and map an interval from $\Omega_k$ to $[-1,1]$ each
  mode will evolve according to the equation \ref{eq:modal}.
+ 
  	 \begin{equation}
- \dot{Q}^{(k)}_i = 
-		\frac{2k +1}{\Delta x} \int_{-1}^{1} f \left( q^h \right) \, \varphi^{(k)}_{\xi}
+ \dot{Q}^{(l)}_k = 
+		\frac{2 l +1}{\Delta x} \int_{-1}^{1} f \left( q^h \right) \, \varphi^{(l)}_{\xi}
 			 \, d\xi
 			 - \frac{2k +1}{\Delta x} \biggl[
-	 	\varphi^{(k)}(1) \, F_{i+\frac{1}{2}} - \varphi^{(k)}(-1) \, F_{i-\frac{1}{2}} \biggr]
+	 	\varphi^{(l)}(1) \, F_{i+\frac{1}{2}} - \varphi^{(l)}(-1) \, F_{i-\frac{1}{2}} \biggr]
 	 	\label{eq:modal}
  	 \end{equation}
 
