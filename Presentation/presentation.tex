@@ -16,7 +16,7 @@
 \usepackage{fancybox}
 \usepackage{rotating,comment}
 
-
+\setbeamertemplate{bibliography item}{[\theenumiv]}
 \def\Av{\vec{\mathbb{A}}}
 \def\As{\mathbb{A}}
 \def\reals{\mathbb{R}}
@@ -277,21 +277,21 @@
 
 \conceptj{Conservation law weak form:}{0in}
 \begin{itemize}
- \item {Multiply by test function:}    \[ 
+ \item<1-> {Multiply by test function:}    \[ 
  \frac{1}{2} \int_{-1}^{1}  \varphi^{(\ell)} \Bigl\{
       	q_{,t} + f(q)_{,x}
       \Bigr\} \, d\xi = 0 \]
       
       \vspace{-3mm}
 
-\item {Integrate by parts}  
+\item<2-> {Integrate by parts}  
 	 {\scriptsize\[ \frac{1}{2} \int_{-1}^{1}  \varphi^{(\ell)} q_{,t} \, d\xi = 
 		\frac{1}{\Delta x} \left( \int_{-1}^{1} f \left( q^h \right) \, \varphi^{(k)}_{\xi}
 			 \, d\xi
 			 - \biggl[
 	 	(\varphi^{(k)} \, f(q))|_{\xi=1} - (\varphi^{(k)} \, f(q))|_{\xi=-1} \biggr] \right) \]}
 \vspace{-3mm}	 	
-\item {Galerkin ansatz:}  	 \[ q(t,\xi) \sim \sum_{k=0}^N Q^{(k)}(t) \, \varphi^{(k)}(\xi) \]	 	
+\item<3-> {Galerkin ansatz:}  	 \[ q(t,\xi) \sim \sum_{k=0}^N Q^{(k)}(t) \, \varphi^{(k)}(\xi) \]	 	
 	 	
 \end{itemize}
 
@@ -312,12 +312,12 @@
 
 \conceptj{Conservation law weak form:}{0in}
 \begin{itemize}
- \item {Use an Orthogonal Basis:}    \[ 
+ \item<1-> {Use an Orthogonal Basis:}    \[ 
  \frac{1}{2} \int_{-1}^{1}  \varphi^{(\ell)} q_{,t} =  \frac{1}{2k +1} \dot{Q}^{(k)}\]
       
       \vspace{-3mm}
 
-\item {Semi-discrete:}  
+\item<2-> {Semi-discrete:}  
 	 \[ \dot{Q}^{(k)}_i = 
 		\frac{2k +1}{\Delta x} \int_{-1}^{1} f \left( q^h \right) \, \varphi^{(k)}_{\xi}
 			 \, d\xi
@@ -325,7 +325,7 @@
 	 	\varphi^{(k)}(1) \, F_{i+\half} - \varphi^{(k)}(-1) \, F_{i-\half} \biggr] \]
 	 	
 \vspace{-1mm}	
-\item {For $k=0$:}
+\item<3-> {For $k=0$:}
           \[\dot{Q}^{(0)}_i= - \frac{1}{\Delta x} \biggl[
 	 	 \, F_{i+\half} - \, F_{i-\half} \biggr] \]
 \end{itemize}
@@ -355,14 +355,14 @@
 % \end{itemize}
 % \end{minipage}\hfill
 \begin{itemize}
-  \item For continuous functions series coefficients converge.
- \item Coefficients give us a proxy for error.
- \item Small coefficients have little effect on our solution.
-  \item If $f$ has a derivative $\nu$ of bounded variation 
+  \item<1-> For continuous functions series coefficients converge.
+ \item<1-> Coefficients give us a proxy for error.
+ \item<2-> Small coefficients have little effect on our solution.
+  \item<3-> If $f$ has a derivative $\nu$ of bounded variation 
  \vspace{0 cm}
- {\scriptsize$$\|f-f_p\|=\sum_{i=p+1}^\infty c_k \varphi^{(k)}(\xi) \le \frac{1}{\nu (p-\nu)^{\nu}}$$}
+ {\scriptsize$$\|f-f_p\|\le \sum_{i=p+1}^\infty |c_k \varphi^{(k)}(\xi)| \le \frac{1}{\nu (p-\nu)^{\nu}}$$}
 \end{itemize}
- \vspace{-0.3 cm}
+ \vspace{-0.5 cm}
 \begin{center}
 \includegraphics[height=40mm]{decayrate}
 \end{center} 
@@ -370,12 +370,12 @@
 \end{frame}
 \begin{frame}{hp-Adaptivity}
  \begin{itemize}
-  \item Discretize domain with cells of size h
-  \item h-adaptivity $\rightarrow$ Adaptive Mesh Refinement
-  \item Discretize using piecewise continuous polynomials of order p.
-  \item p-adaptivity $\rightarrow$ Add higher order polynomials:
+  \item<1-> Discretize domain with cells of size h
+  \item<1-> h-adaptivity $\rightarrow$ Adaptive Mesh Refinement
+  \item<2-> Discretize using piecewise continuous polynomials of order p.
+  \item<2-> p-adaptivity $\rightarrow$ Add higher order polynomials:
   \[ q(t,\xi) = \sum_{k=0}^p Q^{(k)}(t) \, \varphi^{(k)}(\xi) \]
-  \item {\color{red} For smooth functions:
+  \item<3-> {\color{red} For smooth functions:
   
   higher order polynomials $\rightarrow$ {\bf MUCH} better approximation}
  \end{itemize}
@@ -383,15 +383,15 @@
 
 \begin{frame}{Constructing an Algorithm}
 \begin{itemize}
-   \item For DG p can be different on each cell
-  \item The highest coefficient gives an indication of error on each cell
-    \item Each coefficient requires extra work
-    \item {\color{red} Idea:}
+   \item<1-> For DG p can be different on each cell
+  \item<2-> The highest coefficient gives an indication of error on each cell
+    \item<2-> Each coefficient requires extra work
+    \item<3-> {\color{red} Idea:}
     \begin{enumerate}
   \item Very small coefficients $\rightarrow$ can be ignored
   \item Large coefficients $\rightarrow$ need more resolution
   \end{enumerate}
-  \item This is complicated by the PDE
+  \item<4-> This is complicated by the PDE
   \begin{enumerate}
    \item All PDEs propagate information
    \item Hyperbolic PDEs $\rightarrow$ propagation speed is finite
@@ -411,15 +411,15 @@
 
 \begin{frame}{Outline of the Algorithm}
 \begin{itemize}
- \item Pick a maximum order $p_M$ and project initial conditions
+ \item<1->[] Pick a maximum order $p_M$ and project initial conditions
 \end{itemize}
 Our p-adaptive algorithm:
 \begin{enumerate}
- \item Eliminate coefficients below a tolerance $\epsilon$
- \item Determine time-interval between local order modifications
- \item Set buffer region (determined from characteristic speeds)
- \item Evolve coefficients over the interval
- \item Repeat until we have reached the final time
+ \item<2-> Eliminate coefficients below a tolerance $\epsilon$
+ \item<3-> Determine time-interval between local order modifications
+ \item<3-> Set buffer region (determined from characteristic speeds)
+ \item<4-> Evolve coefficients over the interval
+ \item<5-> Repeat until we have reached the final time
 \end{enumerate}
 \end{frame}
 
@@ -480,6 +480,12 @@ Our p-adaptive algorithm:
 \item Limiting?
 \item Adaptive quadrature
 \end{enumerate}
+\end{frame}
+
+\begin{frame}{References}
+\nocite{remacle2003adaptive,berger1998adaptive,eskilsson2011hp,tumolo2013semi}
+ \bibliographystyle{ieeetr} % Plain referencing style
+ \small\bibliography{sources} % Use the example bibliography file sample.bib
 \end{frame}
 
 \begin{frame}{Thank you!}
