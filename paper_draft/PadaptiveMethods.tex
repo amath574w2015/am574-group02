@@ -46,8 +46,8 @@
 
 \section{Introduction}
 
-In this work we investigate using the Discontinuous Galerkin method to achieve variable amounts of resolution
-with p-adaptivity. The Discontinuous Galerkin Finite Element Method (DGFEM) is a high order
+In this work we investigate using the Discontinuous Galerkin method with p-adaptivity to give us variable resolution.
+The Discontinuous Galerkin Finite Element Method (DGFEM) is a high order
 extension of the Godunov Method. Instead of increasing grid resolution in the typical way by locally dividing cells, 
 we could add more
 degrees of freedom to a cell and define a higher order scheme on that cell. This is known as p-adaptivity
@@ -59,7 +59,7 @@ we will examine the requirements for effective dynamic p-adaptivity. This is som
 although there are several papers that have explored this topic. We will attempt to mimic how the 
 CLAWPACK software package implements
 Adaptive Mesh Refinement (AMR) for hyperbolic PDEs. An exploration of the performance of this strategy
-will be preformed on some simple problems. This essentially
+will be preformed on some simple problems. This 
 results in a simple p-adaptive strategy based on surrounding any high-order
 regions of a domain with buffer cells. This strategy is surprisingly effective even when not implemented
 with any sort of adaptive time-stepping.
@@ -67,14 +67,14 @@ with any sort of adaptive time-stepping.
 \section{Discontinuous Galerkin Method}
 
 The Discontinuous Galerkin method is a arbitrary order extension of the first order Finite Volume method.
-This method is actually a hybrid method using the technologies of both the Finite Element method and the Finite
-Volume method. In a Finite Element method we typically use our PDE to construct a variational
+This method is actually a hybrid method using the technologies of both the Finite Element and Finite
+Volume families of methods. In a Finite Element method we typically use our PDE to construct a variational
 form that can be enforced on some finite dimensional function space. This is done by multiplying by a test function $\phi$,
 and integrating by parts.
 
 Let us define a closed domain to be $\Omega$ and our test function to be $\phi$   
-Also let us assume that we are solving a hyperbolic PDE that can be written using the integral form in equation
-\eqref{eq:integralform}.
+Also let us assume that we are solving a hyperbolic PDE that can be written using the differential form in equation
+\eqref{eq:diffform}.
 \begin{equation}
  \frac{\partial {\bf q}}{\partial t} + \frac{\partial {\bf F(q,x,t)}}{\partial x}=0
  \label{eq:diffform}
@@ -94,7 +94,7 @@ form in equation \eqref{eq:weakform}.
 %  Thus we would have to assume that $\phi \in 
 %  C_0$. 
  In a typical Finite Element method $\Omega$ would be the entire domain. However for hyperbolic PDEs this usually
- does not work well. A technical explanation of why this is is beyond the scope of this document, the important thing
+ does not work well. A technical explanation of why is beyond the scope of this document, the important thing
  is that to solve these hyperbolic PDEs we will borrow ideas from the Finite Volume method. We will use
  a function space defined locally on cells in the domain, and solve a separate version of equation \eqref{eq:weakform} 
  on each cell.
@@ -129,20 +129,33 @@ form in equation \eqref{eq:weakform}.
 \int_{\Omega_k} \phi({\bf x}) \frac{\partial q}{\partial t} d\Omega_k =-\phi({\bf x}) {\bf F(q,x,t)} |_{\partial \Omega_k}
  +\int_{\Omega_k}{\bf F(q,x,t)} \phi_x d\Omega_k \label{eq:weakform2}
  \end{equation}
- This equation should look more similar to the equations used to derive the first order Godunov method. The main difference
- is the term $\int_{\Omega_k}{\bf F(q,x,t)}\phi_x d\Omega_k$ which comes from the fact that our
- test function is not just a constant. If $\phi$ is a constant this reduces to the Godunov method.
+ This equation should look similar to the equations used to derive the first order Godunov method. The main difference
+ is the term $\int_{\Omega_k}{\bf F(q,x,t)}\phi_x d\Omega_k$ which comes from the fact that we multiplied by a
+ test function. If $\phi$ is a constant this reduces to the Godunov method.
  This method is typically implemented using Runge-Kutta schemes to integrate coefficients
  in time \cite{cockburn1998runge}.
  \subsection{Choosing a Function Space}
- The formulation of the DGFEM presented in equation \eqref{eq:weakform2} completely decouples neighboring cells from one another.
- So this removes the typical Finite Element method requirement that our basis functions are $C_0$. As such we no longer
- need to pick hat functions, as is typically done. Instead it is normal to pick our basis functions so that on each
- cell $\Omega_k$ we have a hierarchical orthonormal basis. This is the natural extension of the low order Godunov method.
+ The formulation of the DGFEM presented in equation \eqref{eq:weakform2} completely decouples neighboring cells from
+ one another.
+ This removes the typical Finite Element method requirement that our basis functions are $C_0$. As such we will no longer
+ use piecewise defined Lagrange polynomial functions which are nonzero on multiple cells as is typical in Finite Elements. 
+ Instead it is normal to pick our basis functions so that on each
+ cell $\Omega_k$ we have a hierarchical orthogonal basis. This is a natural extension of the low order Godunov method.
  Essentially it means that, instead of just evolving the zeroth order moments (cell averages) of a solution, we are also
  evolving higher order moments. This also has the nice side-effect of making the typical Finite Element mass matrix  
- diagonal. The mass matrix is the name for the linear system which results from terms of the form:
+ diagonal. The mass matrix is the name for the array which results from terms of the form:
  $$\int_{\Omega_k} \phi({\bf x}) \frac{\partial q}{\partial t} d\Omega $$
+ If we use a Legendre polynomial basis and map our interval from $\Omega_k$ to $[-1,1]$ each
+ mode will evolve according to the equation \ref{eq:modal}.
+ 	 \begin{equation}
+ \dot{Q}^{(k)}_i = 
+		\frac{2k +1}{\Delta x} \int_{-1}^{1} f \left( q^h \right) \, \varphi^{(k)}_{\xi}
+			 \, d\xi
+			 - \frac{2k +1}{\Delta x} \biggl[
+	 	\varphi^{(k)}(1) \, F_{i+\frac{1}{2}} - \varphi^{(k)}(-1) \, F_{i-\frac{1}{2}} \biggr]
+	 	\label{eq:modal}
+ 	 \end{equation}
+
  \subsection{Evaluating the Cell Boundary Terms}
  The DGFEM has the same issue as the Finite Volume method in that it requires the evaluation of the flux function
  on the boundary between cells where the solution is not defined. 
@@ -153,9 +166,9 @@ form in equation \eqref{eq:weakform}.
  a simple Lax-Friedrichs flux. However we can simply modify things to use fluctuations so we could use any of the Riemann
  solvers used in CLAWPACK.
  \subsection{Time-stepping}
- In this work our focus is not on accuracy of time-stepping schemes. So we will just pick one standard
+ In this work our focus is not on accuracy of time-stepping schemes. We will just pick one standard
  time-stepping scheme and ignore the fact that its accuracy does not match our spatial accuracy in most situations.
- Additionally we will ignore the issue of local time-stepping, which is often used with adaptive methods, as beyond the
+ Additionally we will ignore adaptive time-stepping as beyond the
  scope of this paper. We will use the well known $3$rd order Runge-Kutta scheme. For the ode $y^{'}=f(t,y)$ this looks like
  \begin{align*}
   k_1=&hf(t,y^n)\\
@@ -241,8 +254,9 @@ form in equation \eqref{eq:weakform}.
 % We have a slight modification of source terms.
 \section{P-Adaptivity for polynomial approximation}
 Consider the situation where we are approximating
-some function $f(x)$ on a line $\Omega=(a,b)$ and we have split our domain into a set of $N$ intervals. Say we just wish
-to adaptively approximate $f$ on each one of these intervals. In this case one natural thing to try and do is to try and
+some function $f(x)$ on an interval $\Omega=(a,b)$ and we have split our domain into a set of $N$ sub-intervals.
+Say we just wish
+to adaptively approximate $f$ on each one of these sub-intervals. In this case one natural approach may be to try and
 compute the orthogonal series expansion of our function. 
 
 Let us define $P_i(x)$ as the ith normalized Legendre polynomial. If we assume that our $f \in L_2 (\Omega)$
@@ -263,9 +277,8 @@ then attempt to construct only the important terms in the Legendre series on eac
 series terms on each cell until consecutive coefficients are below the tolerance, or we reach the maximum order
 of the series that we are willing to keep. We have borrowed this refinement criteria from the Chebfun software package
 \cite{trefethen2013approximation}.
-In that software package it is used to construct an orthogonal series representation of a function on a single interval.
 In the literature currently existing on p-adaptivity\cite{tumolo2013semi,eskilsson2011hp} the authors use very similar
-refinement checks. 
+refinement checks to determine if they have resolved enough coefficients. 
 
 \begin{algorithm}
 \caption{Algorithm for p-adaptive approximation}
@@ -288,28 +301,30 @@ refinement checks.
 
 After using Algorithm \ref{alg:algo1} to
 compute an initial condition we need to actually solve the PDE. A hyperbolic PDE transfers information at a finite
-speed throughout the domain. This information may change the required order of cell and so to avoid losing information we
+speed throughout the domain. This information may change the required order of a cell. To avoid losing information we
 must allow solutions to use high enough order in cells surrounding cells where the initial condition projection requires high
 order. 
 
 In the literature there have been several approaches to this. In \cite{tumolo2013semi} the authors adaptively change
-the order every time-step in order avoid losing accuracy. However this is feasible as they are using semi-Lagrangian time
+the order every time-step in order avoid losing accuracy. However this is feasible for them 
+as they are using semi-Lagrangian time
 stepping and do not need to take very many time-steps. We would like to do something to allow us to only reassign polynomial
 orders after a series of time-steps. In \cite{eskilsson2011hp} the authors use the rule that neighboring cells
-cannot have more than a one-degree difference in maximum polynomial order. We felt like this may force us to have
+cannot have more than a one-degree difference in maximum polynomial order. This may force us to have
 too many high-order cells in some regions because if we have one cell requiring very high order this would require
-a wide stencil for the degree to drop back down.
+a wide stencil of high degree polynomials.
 
 We have decided to use a different approach, one modeled after what is done in the CLAWPACK software package
 when implementing AMR. We do not want to change polynomial degrees every time-step. In order to preserve the accuracy
 of the solution, then, we will require a finite region around a cell $j$ where the maximum order is at least
-as high as the maximum order cell $j$ was originally computed to have.
+as high as the maximum order that we originally computed for cell $j$.
 Essentially this boils down to checking a neighborhood around each cell, and letting our solution in the current
 cell actually use polynomials of an order equal to the largest order in this neighborhood. We only base
-this on the orders initially computed. We will refer to this region where
-we allow the solution to use higher order than is necessary as the buffer region. In practice we actually
-set the buffer region to be one cell wide, and we pick our polynomial re-assignment time to fit that situation.
-Call this time $\Delta t_p$. We set 
+this on the orders initially computed, and we will initialize these new coefficients to zeros (essentially we are padding
+vectors with extra zeros). We will refer to this region where
+we allow the solution to use higher order than is necessary initially as the buffer region. In practice we actually
+set the buffer region to be one cell wide, and we pick our polynomial re-assignment time to fit that buffer.
+Call this polynomial re-assignment time  $\Delta t_p$. We set 
 $$\Delta t_p=\frac{\Delta x }{\max \lambda(q)}$$
 We pick this time because it represents the time at which our solution in cell $j$ could have physically propagated
 beyond its direct neighborhood. 
@@ -317,7 +332,7 @@ In DG this will still include many timesteps because the linear stability limit 
 \subsection{Refining and coarsening in time}
 We will need to reallocate local polynomial degrees whenever we expect that high order information
  should begin propagating outside of our buffer region. Following that we will assign a new buffer.
-Hopefully some region in our old buffer still will need high-order and so we will essentially be re-assigning a new
+Probably some region in our old buffer still will need high-order and so we will essentially be re-assigning a new
 buffer around this region. In this way we are mimicking what is often done in AMR where there is a buffer region of
 very fine cells around the region that actually requires high resolution at any point in time\cite{berger1998adaptive}.
 Our whole algorithm will proceed as follows. An outline of our algorithm is shown in Algorithm \ref{alg:algo2}.
@@ -359,13 +374,13 @@ is highly over-integrating this term on some cells.
 
 Additionally it should be possible to implement some sort of local time-stepping to take
 advantage of the fact that the linear stability limit becomes more strict as the polynomial order increases.
-Thus we should be able to somehow take larger time-steps on cells using low degree polynomials
+Thus we should be able to take larger time-steps on cells using low degree polynomials
 and take smaller timesteps on the cells with higher degree polynomials. This would be a big improvement
 over letting the worst cell determine a global time-step but it is too complicated to discuss here.
 
 \section{Numerical Results}
 
-We have implemented our scheme on 
+We have implemented our scheme on several simple examples. 
 
 \subsection{Advection}
 
