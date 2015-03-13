@@ -4,6 +4,7 @@
 \documentclass[sansserif]{beamer}
 
 \usepackage{latexsym}
+\usepackage{animate}
 \usepackage{pifont}
 \usepackage{color}
 \usepackage{xcolor}
@@ -198,7 +199,7 @@
   % or ...
   %\usefonttheme{structurebold}
 
-  \setbeamercovered{transparent}
+  \setbeamercovered{invisible}
   % or whatever (possibly just delete it)
   
 
@@ -392,18 +393,27 @@
   \end{enumerate}
   \item This is complicated by the PDE
   \begin{enumerate}
-   \item All PDEs $\rightarrow$ propagate information
-   \item Hyperbolic PDEs $\rightarrow$ propagation is finite
-   \item Cells with high-order neighbors may soon need high-order
+   \item All PDEs propagate information
+   \item Hyperbolic PDEs $\rightarrow$ propagation speed is finite
+   \item Cells with high-order neighbors may soon become high-order
   \end{enumerate}
 \end{itemize}
+\end{frame}
+
+\begin{frame}{Buffer Regions}
+ \only <1>{ \begin{center}
+  \includegraphics[height=2.0in]{buffer1}
+ \end{center} }
+  \only <2>{ \begin{center}
+  \includegraphics[height=2.0in]{buffer2}
+ \end{center} }
 \end{frame}
 
 \begin{frame}{Outline of the Algorithm}
 \begin{itemize}
  \item Pick a maximum order $p_M$ and project initial conditions
 \end{itemize}
-Our P-adaptive algorithm:
+Our p-adaptive algorithm:
 \begin{enumerate}
  \item Eliminate coefficients below a tolerance $\epsilon$
  \item Determine time-interval between local order modifications
@@ -413,17 +423,66 @@ Our P-adaptive algorithm:
 \end{enumerate}
 \end{frame}
 
-\begin{frame}{Buffer Regions}
- \only <1>{ \begin{center}
-  \includegraphics[height=30 mm]{buffer1}
- \end{center} }
-  \only <2>{ \begin{center}
-  \includegraphics[height=30 mm]{buffer2}
- \end{center} }
+\begin{frame}{Cosbell Advection}
+\vspace{-0.7cm}
+\begin{center}
+\animategraphics[height=2.4in,controls]{3}{final/cosbellAnim/frame}{1}{11}
+\end{center}
 \end{frame}
 
+\begin{frame}{Cosbell Advection}
+\begin{columns}
+\column{0.5\textwidth}
+\only<1->{Both methods similarly accurate}
+\medskip
 
+\only<2->{p-Adaptive uses less DOFs!}
+\medskip
 
+\only<3->{Less DOFs $\rightarrow$ Less CPU time}
 
+\column{0.5\textwidth}
+\begin{figure}
+\vspace{-0.7cm}
+\includegraphics[height=2.4in]{final/efficency.pdf}
+\end{figure}
+\end{columns}
+\end{frame}
 
+\begin{frame}{Burger's Equation}
+\begin{figure}
+\vspace{-0.7cm}
+\includegraphics[height=2.4in]{final/burgers_heat.pdf}
+\end{figure}
+\end{frame}
+
+\begin{frame}{Conclusions}
+\begin{enumerate}
+\item<1-> Modifying local polynomial degree can be an efficient method of adding/removing DOFs in problems which demand efficiency
+	\begin{itemize}
+	\item<1-> Atmospheric modeling, Seismology, etc..
+	\end{itemize}
+\item<2-> Works best where solution is smooth
+	\begin{itemize}
+	\item<2-> Coefficients decay quickly
+	\end{itemize}
+\item<3-> Not as great where solutions are discontinuous
+	\begin{itemize}
+	\item<3-> Coefficients don't decay at all
+	\end{itemize}
+\end{enumerate}
+\end{frame}
+
+\begin{frame}{The Future}
+\begin{enumerate}
+\item Local high order time stepping (Local Lax-Wendroff method)
+\item Simultaneous $h$--$p$ adaptivity
+\item Limiting?
+\item Adaptive quadrature
+\end{enumerate}
+\end{frame}
+
+\begin{frame}{Thank you!}
+Questions?
+\end{frame}
 \end{document}
